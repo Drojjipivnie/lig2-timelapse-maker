@@ -1,6 +1,7 @@
 package io.drojj.job
 
 import io.drojj.dao.VideosDAO
+import io.drojj.utils.Constants
 import io.drojj.utils.Constants.IMAGES_DIRECTORY
 import io.drojj.utils.Constants.IMAGE_BASENAME_FORMATTER
 import io.drojj.utils.Constants.JOB_TYPE
@@ -28,7 +29,7 @@ class JpegToMp4Job : Job {
             "${context.jobDetail.jobDataMap.getString(IMAGES_DIRECTORY)}/${jobType.targetRootDirectory}/${
                 jobType.targetSubDirectoryFunction.apply(now)
             }"
-        val saveDirectory = context.jobDetail.jobDataMap.getString(VIDEO_DAO)
+        val saveDirectory = context.jobDetail.jobDataMap.getString(Constants.VIDEOS_DIRECTORY)
 
         var fileSaved = false
         val jpegPath = Paths.get(imagesDirectory)

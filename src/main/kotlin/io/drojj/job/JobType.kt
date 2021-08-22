@@ -17,10 +17,11 @@ enum class JobType(
     WEEK("0 */15 8-20 ? * *",
         "0 30 21 ? * SUN *",
         "weeks_of_year",
-        { localDateTime: LocalDateTime -> localDateTime[WeekFields.ISO.weekOfWeekBasedYear()].toString() }),
+        { localDateTime: LocalDateTime -> localDateTime.year.toString() + "/" + localDateTime[WeekFields.ISO.weekOfWeekBasedYear()].toString() }),
     MONTH("0 0 8-20 ? * *",
         "0 30 21 L * ? *",
-        "months_of_year", { localDateTime: LocalDateTime -> localDateTime.month.toString() }),
+        "months_of_year",
+        { localDateTime: LocalDateTime -> localDateTime.year.toString() + "/" + localDateTime.month.toString() }),
     YEAR("0 0 12 * * ?",
         "0 30 12 L DEC ? *",
         "year", { localDateTime: LocalDateTime -> localDateTime.year.toString() });

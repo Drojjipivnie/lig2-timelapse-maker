@@ -16,7 +16,7 @@ class VideosDAOImpl : VideosDAO {
         dataSource.connection.use {
             val prepareStatement =
                 it.prepareStatement("INSERT INTO lig2.videos (name, type, file_path) VALUES (?, ?, ?)")
-            prepareStatement.setString(1, file.name)
+            prepareStatement.setString(1, file.parentFile.name)
             prepareStatement.setString(2, jobType.name)
             prepareStatement.setString(3, file.absolutePath)
             prepareStatement.executeUpdate()

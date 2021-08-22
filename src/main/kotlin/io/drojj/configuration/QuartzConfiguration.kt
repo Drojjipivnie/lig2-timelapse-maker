@@ -1,13 +1,15 @@
 package io.drojj.configuration
 
+import io.drojj.dao.VideosDAO
 import io.drojj.job.ImagePullerJob
 import io.drojj.job.JobType
+import io.drojj.utils.Constants.VIDEO_DAO
 import io.drojj.utils.Constants.IMAGES_DIRECTORY
 import io.drojj.utils.Constants.JOB_TYPE
 import io.drojj.utils.Constants.PREVIEW_URL
 import io.drojj.utils.Constants.VIDEOS_DIRECTORY
 import io.quarkus.runtime.StartupEvent
-import mine.drojj.job.JpegToMp4Job
+import io.drojj.job.JpegToMp4Job
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.quartz.*
 import java.net.URL
@@ -17,6 +19,9 @@ import javax.inject.Inject
 
 @ApplicationScoped
 class QuartzConfiguration {
+
+    @Inject
+    lateinit var videosDAO: VideosDAO
 
     @Inject
     lateinit var quartz: Scheduler
@@ -40,6 +45,7 @@ class QuartzConfiguration {
         jobData[VIDEOS_DIRECTORY] = videosDirectory
         jobData[PREVIEW_URL] = previewUrl
         jobData[JOB_TYPE] = jobType
+        jobData[VIDEO_DAO] = videosDAO
 
         val jobTypeLower = jobType.name.lowercase()
         val imageJob = JobBuilder.newJob(ImagePullerJob::class.java)

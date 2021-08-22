@@ -1,10 +1,10 @@
-package mine.drojj.job
+package io.drojj.job
 
-import io.drojj.job.JobType
-import io.drojj.utils.Constants
-import io.drojj.utils.Constants.IMAGE_BASENAME_FORMATTER
+import io.drojj.dao.VideosDAO
 import io.drojj.utils.Constants.IMAGES_DIRECTORY
-import io.drojj.utils.Constants.VIDEOS_DIRECTORY
+import io.drojj.utils.Constants.IMAGE_BASENAME_FORMATTER
+import io.drojj.utils.Constants.JOB_TYPE
+import io.drojj.utils.Constants.VIDEO_DAO
 import org.jcodec.api.awt.AWTSequenceEncoder
 import org.quartz.Job
 import org.quartz.JobExecutionContext
@@ -22,12 +22,13 @@ class JpegToMp4Job : Job {
 
     override fun execute(context: JobExecutionContext) {
         val now = LocalDateTime.now()
-        val jobType = context.jobDetail.jobDataMap[Constants.JOB_TYPE] as JobType
+        val videosDAO = context.jobDetail.jobDataMap[VIDEO_DAO] as VideosDAO
+        val jobType = context.jobDetail.jobDataMap[JOB_TYPE] as JobType
         val imagesDirectory =
             "${context.jobDetail.jobDataMap.getString(IMAGES_DIRECTORY)}/${jobType.targetRootDirectory}/${
                 jobType.targetSubDirectoryFunction.apply(now)
             }"
-        val saveDirectory = context.jobDetail.jobDataMap.getString(VIDEOS_DIRECTORY)
+        val saveDirectory = context.jobDetail.jobDataMap.getString(VIDEO_DAO)
 
         var fileSaved = false
         val jpegPath = Paths.get(imagesDirectory)
@@ -63,6 +64,7 @@ class JpegToMp4Job : Job {
             encoder.finish()
 
             LOGGER.info("Saved video to " + output.absolutePath)
+            videosDAO.saveVideoInformation(output, jobType)
             fileSaved = true
         } catch (e: Exception) {
             LOGGER.error("Can't create video, rescheduling", e)

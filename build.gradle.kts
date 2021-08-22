@@ -23,6 +23,10 @@ dependencies {
     //Quartz
     implementation("io.quarkus:quarkus-quartz")
 
+    //PostgreSQL
+    implementation("io.quarkus:quarkus-jdbc-postgresql")
+    implementation("io.quarkus:quarkus-agroal")
+
     //DI
     implementation("io.quarkus:quarkus-arc")
 

@@ -23,6 +23,9 @@ dependencies {
     //Quartz
     implementation("io.quarkus:quarkus-quartz")
 
+    //java.time extension
+    implementation("org.threeten:threeten-extra:1.7.0")
+
     //PostgreSQL
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-agroal")

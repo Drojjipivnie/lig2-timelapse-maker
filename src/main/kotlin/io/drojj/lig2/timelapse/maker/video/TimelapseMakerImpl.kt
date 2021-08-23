@@ -1,35 +1,37 @@
-package io.drojj.job
+package io.drojj.lig2.timelapse.maker.video
 
-import io.drojj.dao.VideosDAO
-import io.drojj.utils.Constants
-import io.drojj.utils.Constants.IMAGES_DIRECTORY
-import io.drojj.utils.Constants.IMAGE_BASENAME_FORMATTER
-import io.drojj.utils.Constants.JOB_TYPE
-import io.drojj.utils.Constants.VIDEO_DAO
+import io.drojj.lig2.timelapse.maker.TimelapseType
+import io.drojj.lig2.timelapse.maker.dao.TimelapseRepository
+import io.drojj.lig2.timelapse.maker.utils.Constants
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jcodec.api.awt.AWTSequenceEncoder
-import org.quartz.Job
-import org.quartz.JobExecutionContext
-import org.quartz.JobExecutionException
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
+import javax.enterprise.context.ApplicationScoped
 import javax.imageio.ImageIO
+import javax.inject.Inject
 import kotlin.streams.toList
 
-class JpegToMp4Job : Job {
+@ApplicationScoped
+class TimelapseMakerImpl : TimelapseMaker {
 
-    override fun execute(context: JobExecutionContext) {
+    @ConfigProperty(name = "resources.images-directory")
+    lateinit var imagesDirectory: String
+
+    @ConfigProperty(name = "resources.timelapses-directory")
+    lateinit var saveDirectory: String
+
+    @Inject
+    lateinit var timelapseRepository: TimelapseRepository
+
+    override fun makeTimelapse(timelapseType: TimelapseType) {
         val now = LocalDateTime.now()
-        val videosDAO = context.jobDetail.jobDataMap[VIDEO_DAO] as VideosDAO
-        val jobType = context.jobDetail.jobDataMap[JOB_TYPE] as JobType
-        val imagesDirectory =
-            "${context.jobDetail.jobDataMap.getString(IMAGES_DIRECTORY)}/${jobType.targetRootDirectory}/${
-                jobType.targetSubDirectoryFunction.apply(now)
-            }"
-        val saveDirectory = context.jobDetail.jobDataMap.getString(Constants.VIDEOS_DIRECTORY)
+        val targetSubDirectory = timelapseType.targetSubDirectoryFunction(now)
+        val imagesDirectory = "$imagesDirectory/${timelapseType.targetRootDirectory}/$targetSubDirectory"
 
         var fileSaved = false
         val jpegPath = Paths.get(imagesDirectory)
@@ -37,11 +39,14 @@ class JpegToMp4Job : Job {
             val sortedList = Files.list(jpegPath).sorted { o1, o2 ->
                 val fileName1 = o1.fileName.toString()
                 val fileName2 = o2.fileName.toString()
-                LocalDateTime.parse(fileName1.substring(0, fileName1.lastIndexOf('.')), IMAGE_BASENAME_FORMATTER)
+                LocalDateTime.parse(
+                    fileName1.substring(0, fileName1.lastIndexOf('.')),
+                    Constants.IMAGE_BASENAME_FORMATTER
+                )
                     .compareTo(
                         LocalDateTime.parse(
                             fileName2.substring(0, fileName2.lastIndexOf('.')),
-                            IMAGE_BASENAME_FORMATTER
+                            Constants.IMAGE_BASENAME_FORMATTER
                         )
                     )
             }.toList()
@@ -52,7 +57,7 @@ class JpegToMp4Job : Job {
             }
 
             val folderToSave =
-                "$saveDirectory/${jobType.targetRootDirectory}/${jobType.targetSubDirectoryFunction.apply(now)}"
+                "$saveDirectory/${timelapseType.targetRootDirectory}/$targetSubDirectory"
             Files.createDirectories(Paths.get(folderToSave))
 
             val output = File("$folderToSave/timelapse.mp4")
@@ -64,12 +69,9 @@ class JpegToMp4Job : Job {
             }
             encoder.finish()
 
-            LOGGER.info("Saved video to " + output.absolutePath)
-            videosDAO.saveVideoInformation(output, jobType)
+            LOGGER.info("Saved timelapse to " + output.absolutePath)
+            timelapseRepository.saveInformation(output, timelapseType)
             fileSaved = true
-        } catch (e: Exception) {
-            LOGGER.error("Can't create video, rescheduling", e)
-            throw JobExecutionException(e, true)
         } finally {
             if (fileSaved) {
                 LOGGER.info("Prepare to remove jpeg files")
@@ -81,6 +83,7 @@ class JpegToMp4Job : Job {
 
     companion object {
         private const val FPS = 5
-        private val LOGGER = LoggerFactory.getLogger(JpegToMp4Job::class.java)
+        private val LOGGER = LoggerFactory.getLogger(TimelapseMakerImpl::class.java)
     }
+
 }

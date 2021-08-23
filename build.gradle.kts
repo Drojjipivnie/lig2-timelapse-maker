@@ -33,9 +33,6 @@ dependencies {
     //JCodec
     implementation("org.jcodec:jcodec:0.2.5")
     implementation("org.jcodec:jcodec-javase:0.2.5")
-
-//    testImplementation("io.quarkus:quarkus-junit5")
-//    testImplementation("io.rest-assured:rest-assured")
 }
 
 group = "io.drojj"

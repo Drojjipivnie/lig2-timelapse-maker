@@ -33,6 +33,9 @@ dependencies {
     //DI
     implementation("io.quarkus:quarkus-arc")
 
+    //Cache
+    implementation("io.quarkus:quarkus-cache")
+
     //JCodec
     implementation("org.jcodec:jcodec:0.2.5")
     implementation("org.jcodec:jcodec-javase:0.2.5")

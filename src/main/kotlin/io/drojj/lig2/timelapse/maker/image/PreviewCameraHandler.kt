@@ -1,5 +1,6 @@
 package io.drojj.lig2.timelapse.maker.image
 
+import io.quarkus.cache.CacheResult
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
@@ -19,7 +20,7 @@ class PreviewCameraHandler(
     @ConfigProperty(name = "lig2.preview.url")
     lateinit var previewUrl: URL
 
-
+    @CacheResult(cacheName = "preview-image")
     override fun instantImage(): BufferedImage {
         LOGGER.info("Prepare to download image from {}", previewUrl.toString())
         val connection = previewUrl.openConnection()

@@ -39,6 +39,7 @@ dependencies {
     //JCodec
     implementation("org.jcodec:jcodec:0.2.5")
     implementation("org.jcodec:jcodec-javase:0.2.5")
+    implementation("org.imgscalr:imgscalr-lib:4.2")
 }
 
 group = "io.drojj"

@@ -4,6 +4,7 @@ import io.drojj.lig2.timelapse.maker.TimelapseType
 import io.drojj.lig2.timelapse.maker.dao.TimelapseRepository
 import io.drojj.lig2.timelapse.maker.utils.Constants
 import org.eclipse.microprofile.config.inject.ConfigProperty
+import org.imgscalr.Scalr
 import org.jcodec.api.awt.AWTSequenceEncoder
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -64,7 +65,14 @@ class TimelapseMakerImpl : TimelapseMaker {
             val encoder = AWTSequenceEncoder.createSequenceEncoder(output, FPS)
             LOGGER.info("Prepare to encode images")
             for (image in sortedList) {
-                encoder.encodeImage(ImageIO.read(Files.newInputStream(image)))
+                var bufferedImage = ImageIO.read(Files.newInputStream(image))
+                if (bufferedImage.width != 1280 || bufferedImage.height != 720) {
+                    bufferedImage = Scalr.resize(
+                        bufferedImage, Scalr.Method.QUALITY,
+                        1280, 720
+                    )
+                }
+                encoder.encodeImage(bufferedImage)
                 LOGGER.info("Encoded image $image")
             }
             encoder.finish()

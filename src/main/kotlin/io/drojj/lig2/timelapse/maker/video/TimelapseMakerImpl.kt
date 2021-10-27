@@ -3,6 +3,10 @@ package io.drojj.lig2.timelapse.maker.video
 import io.drojj.lig2.timelapse.maker.TimelapseType
 import io.drojj.lig2.timelapse.maker.dao.TimelapseRepository
 import io.drojj.lig2.timelapse.maker.utils.Constants
+import net.bramp.ffmpeg.FFmpeg
+import net.bramp.ffmpeg.FFmpegExecutor
+import net.bramp.ffmpeg.FFprobe
+import net.bramp.ffmpeg.builder.FFmpegBuilder
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.imgscalr.Scalr
 import org.jcodec.api.awt.AWTSequenceEncoder
@@ -28,6 +32,10 @@ class TimelapseMakerImpl : TimelapseMaker {
 
     @Inject
     lateinit var timelapseRepository: TimelapseRepository
+
+    val ffmpegExecutor = FFmpegExecutor(FFmpeg(), FFprobe())
+
+    val progressListener = HumanReadableProgressListener()
 
     override fun makeTimelapse(timelapseType: TimelapseType) {
         val now = LocalDateTime.now()
@@ -77,8 +85,18 @@ class TimelapseMakerImpl : TimelapseMaker {
             }
             encoder.finish()
 
-            LOGGER.info("Saved timelapse to " + output.absolutePath)
-            timelapseRepository.saveInformation(output, timelapseType)
+            LOGGER.info("Saved raw timelapse to " + output.absolutePath)
+
+            val compressedOutput = "$folderToSave/timelapse265.mp4"
+            val job = FFmpegBuilder()
+                .setInput(output.absolutePath)
+                .overrideOutputFiles(true)
+                .addOutput(compressedOutput)
+                .setVideoCodec("libx265")
+                .setConstantRateFactor(28.0)
+                .done()
+            ffmpegExecutor.createJob(job, progressListener).run()
+            timelapseRepository.saveInformation(File(compressedOutput), timelapseType)
             fileSaved = true
         } finally {
             if (fileSaved) {

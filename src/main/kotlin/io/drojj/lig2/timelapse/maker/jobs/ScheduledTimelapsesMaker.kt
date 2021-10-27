@@ -14,22 +14,22 @@ class ScheduledTimelapsesMaker {
     @Inject
     lateinit var timelapseMaker: TimelapseMaker
 
-    @Scheduled(cron = "0 30 21 ? * * *")
+    @Scheduled(cron = "0 15 21 ? * * *")
     fun dailyTimelapses() {
         makeTimelapse(TimelapseType.DAY)
     }
 
-    @Scheduled(cron = "0 30 21 ? * SUN *")
+    @Scheduled(cron = "0 15 21 ? * SUN *")
     fun weekTimelapses() {
         makeTimelapse(TimelapseType.WEEK)
     }
 
-    @Scheduled(cron = "0 30 21 L * ? *")
+    @Scheduled(cron = "0 15 21 L * ? *")
     fun monthTimelapses() {
         makeTimelapse(TimelapseType.MONTH)
     }
 
-    @Scheduled(cron = "0 30 12 L DEC ? *")
+    @Scheduled(cron = "0 15 12 L DEC ? *")
     fun yearTimelapses() {
         makeTimelapse(TimelapseType.YEAR)
     }

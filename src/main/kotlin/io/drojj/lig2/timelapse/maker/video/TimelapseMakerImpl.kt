@@ -7,18 +7,20 @@ import net.bramp.ffmpeg.FFmpeg
 import net.bramp.ffmpeg.FFmpegExecutor
 import net.bramp.ffmpeg.FFprobe
 import net.bramp.ffmpeg.builder.FFmpegBuilder
+import org.apache.commons.lang3.math.Fraction
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import org.imgscalr.Scalr
-import org.jcodec.api.awt.AWTSequenceEncoder
 import org.slf4j.LoggerFactory
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import javax.enterprise.context.ApplicationScoped
-import javax.imageio.ImageIO
 import javax.inject.Inject
+import kotlin.io.path.absolutePathString
 import kotlin.streams.toList
 
 @ApplicationScoped
@@ -65,38 +67,37 @@ class TimelapseMakerImpl : TimelapseMaker {
                 return
             }
 
+            val frameOrderFile = Files.createTempFile(timelapseType.name, ".txt")
+            val frameOrderFilePath = frameOrderFile.toAbsolutePath().toString()
+            BufferedWriter(OutputStreamWriter(FileOutputStream(frameOrderFile.toFile()))).use {
+                for (image in sortedList) {
+                    it.write("file '${image.absolutePathString()}'")
+                    it.newLine()
+                    it.write("duration 0.2")
+                    it.newLine()
+                }
+            }
+
             val folderToSave =
                 "$saveDirectory/${timelapseType.targetRootDirectory}/$targetSubDirectory"
             Files.createDirectories(Paths.get(folderToSave))
 
-            val output = File("$folderToSave/timelapse.mp4")
-            val encoder = AWTSequenceEncoder.createSequenceEncoder(output, FPS)
-            LOGGER.info("Prepare to encode images")
-            for (image in sortedList) {
-                var bufferedImage = ImageIO.read(Files.newInputStream(image))
-                if (bufferedImage.width != 1280 || bufferedImage.height != 720) {
-                    bufferedImage = Scalr.resize(
-                        bufferedImage, Scalr.Method.QUALITY,
-                        1280, 720
-                    )
-                }
-                encoder.encodeImage(bufferedImage)
-                LOGGER.info("Encoded image $image")
-            }
-            encoder.finish()
+            LOGGER.info("Prepared frame order in file {}", frameOrderFilePath)
 
-            LOGGER.info("Saved raw timelapse to " + output.absolutePath)
-
-            val compressedOutput = "$folderToSave/timelapse265.mp4"
+            val targetVideoPath = "$folderToSave/timelapse.mp4"
             val job = FFmpegBuilder()
-                .setInput(output.absolutePath)
+                .addExtraArgs("-safe", "0")
+                .setInput(frameOrderFilePath)
+                .setFormat("concat")
                 .overrideOutputFiles(true)
-                .addOutput(compressedOutput)
+                .addOutput(targetVideoPath)
                 .setVideoCodec("libx265")
+                .setVideoFrameRate(FPS)
+                .setVideoResolution(1280, 720)
                 .setConstantRateFactor(28.0)
                 .done()
             ffmpegExecutor.createJob(job, progressListener).run()
-            timelapseRepository.saveInformation(File(compressedOutput), timelapseType)
+            timelapseRepository.saveInformation(File(targetVideoPath), timelapseType)
             fileSaved = true
         } finally {
             if (fileSaved) {
@@ -108,7 +109,7 @@ class TimelapseMakerImpl : TimelapseMaker {
     }
 
     companion object {
-        private const val FPS = 5
+        private val FPS = Fraction.getFraction(5.0)
         private val LOGGER = LoggerFactory.getLogger(TimelapseMakerImpl::class.java)
     }
 

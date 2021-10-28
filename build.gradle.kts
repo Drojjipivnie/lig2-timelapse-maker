@@ -36,10 +36,7 @@ dependencies {
     //Cache
     implementation("io.quarkus:quarkus-cache")
 
-    //Video and image libraries
-    implementation("org.jcodec:jcodec:0.2.5")
-    implementation("org.jcodec:jcodec-javase:0.2.5")
-    implementation("org.imgscalr:imgscalr-lib:4.2")
+    //FFmpeg wrapper
     implementation("net.bramp.ffmpeg:ffmpeg:0.6.2")
 }
 
